@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "Find out the antonym of the word 'vulnerable'",
+          options: {
+            a: "Harmful",
+            b: "Protected",
+            c: "Incapable",
+            d: "Destructive",
+          },
+          correct: "b",
+          explanation:
+            "<ul><li>'Vulnerable' (দুর্বল, অরক্ষিত) অর্থ হলো যা সহজেই আঘাতপ্রাপ্ত হতে পারে বা ক্ষতিগ্রস্ত হতে পারে।</li><li>(A) 'Harmful' (ক্ষতিকর) অর্থ হলো যা ক্ষতি করতে পারে।</li><li>(B) 'Protected' (সুরক্ষিত) অর্থ হলো যা সুরক্ষিত বা রক্ষিত। এটি 'vulnerable' এর বিপরীত।</li><li>(C) 'Incapable' (অক্ষম) অর্থ হলো যা কোনো কিছু করতে অক্ষম।</li><li>(D) 'Destructive' (ধ্বংসাত্মক) অর্থ হলো যা ধ্বংস করতে পারে।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "The antonym of 'Viable' is",
+          options: {
+            a: "Possible",
+            b: "Impracticable",
+            c: "Vulnerable",
+            d: "Honourable",
+          },
+          correct: "b",
+          explanation:
+            "<ul><li>'Viable' (কার্যকর, টেকসই) অর্থ হলো যা কার্যকর বা সফল হওয়ার সম্ভাবনা আছে।</li><li>(A) 'Possible' (সম্ভব) অর্থ হলো যা করা সম্ভব। এটি 'Viable' এর সমার্থক।</li><li>(B) 'Impracticable' (অবাস্তব, অকার্যকর) অর্থ হলো যা করা সম্ভব নয় বা কার্যকর নয়। এটি 'Viable' এর বিপরীত।</li><li>(C) 'Vulnerable' (দুর্বল, অরক্ষিত) অর্থ হলো যা সহজে আঘাতপ্রাপ্ত হতে পারে।</li><li>(D) 'Honourable' (সম্মানজনক) অর্থ হলো সম্মান পাওয়ার যোগ্য।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "Value means-",
+          options: {
+            a: "Principles",
+            b: "Punctuality",
+            c: "Product",
+            d: "Judgement",
+          },
+          correct: "a",
+          explanation:
+            "<ul><li>'Value' (মূল্য, নীতি) এর বিভিন্ন অর্থ আছে। যখন এটি নৈতিক বা ব্যক্তিগত গুরুত্ব বোঝায়, তখন এর অর্থ নীতি বা আদর্শ।</li><li>(A) 'Principles' (নীতিমালা, আদর্শ) অর্থ হলো মৌলিক বিশ্বাস বা নিয়মাবলী। এটি 'Value' এর একটি গুরুত্বপূর্ণ অর্থ।</li><li>(B) 'Punctuality' (সময়নিষ্ঠা) অর্থ হলো সময়মতো কাজ করার অভ্যাস।</li><li>(C) 'Product' (পণ্য) অর্থ হলো উৎপাদিত বস্তু।</li><li>(D) 'Judgement' (রায়, বিচার) অর্থ হলো সিদ্ধান্ত বা মতামত।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "The antonym of 'Vigorous' is",
+          options: {
+            a: "Protection",
+            b: "Weak",
+            c: "Echelon",
+            d: "Regiment",
+          },
+          correct: "b",
+          explanation:
+            "<ul><li>'Vigorous' (শক্তিশালী, জোরালো) অর্থ হলো শক্তিশালী, উদ্যমী বা জোরালো।</li><li>(A) 'Protection' (সুরক্ষা) একটি noun।</li><li>(B) 'Weak' (দুর্বল) অর্থ হলো ক্ষমতাহীন বা ক্ষীণ। এটি 'Vigorous' এর বিপরীত।</li><li>(C) 'Echelon' (পদবিন্যাস) অর্থ হলো সামরিক বা প্রশাসনিক স্তরবিন্যাস।</li><li>(D) 'Regiment' (রেজিমেন্ট) একটি সামরিক ইউনিট।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "'Vacillate' is the opposite of",
+          options: {
+            a: "irritate",
+            b: "amplify",
+            c: "determine",
+            d: "hesitate",
+          },
+          correct: "c",
+          explanation:
+            "<ul><li>'Vacillate' (দোদুল্যমান হওয়া, দ্বিধা করা) অর্থ হলো দ্বিধা করা বা মনস্থির করতে না পারা।</li><li>(A) 'Irritate' (বিরক্ত করা) অর্থ হলো জ্বালাতন করা বা রাগিয়ে দেওয়া।</li><li>(B) 'Amplify' (বৃদ্ধি করা, বিবর্ধিত করা) অর্থ হলো বড় করা বা জোরদার করা।</li><li>(C) 'Determine' (দৃঢ়সংকল্প হওয়া, সিদ্ধান্ত নেওয়া) অর্থ হলো দৃঢ়সংকল্প হওয়া বা সিদ্ধান্ত নেওয়া। এটি 'Vacillate' এর বিপরীত।</li><li>(D) 'Hesitate' (দ্বিধা করা) অর্থ হলো দ্বিধা করা। এটি 'Vacillate' এর সমার্থক।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "The synonym of the word 'victor' is-",
+          options: {
+            a: "vanquisher",
+            b: "defeated",
+            c: "nonentity",
+            d: "indication",
+          },
+          correct: "a",
+          explanation:
+            "<ul><li>'Victor' (বিজয়ী) অর্থ হলো যে জয়লাভ করেছে।</li><li>(A) 'Vanquisher' (বিজয়ী, পরাক্রমী) অর্থ হলো যে পরাজিত করেছে। এটি 'victor' এর সমার্থক।</li><li>(B) 'Defeated' (পরাজিত) অর্থ হলো যে হেরে গেছে। এটি 'victor' এর বিপরীত।</li><li>(C) 'Nonentity' (নগণ্য ব্যক্তি) অর্থ হলো গুরুত্বহীন ব্যক্তি।</li><li>(D) 'Indication' (ইঙ্গিত) অর্থ হলো চিহ্ন বা সংকেত।</li></ul>",
+        },
+        {
+          id: 7,
+          question: '"Versatile" means -',
+          options: {
+            a: "Inept",
+            b: "Multitalented",
+            c: "Mobile",
+            d: "Varsity teacher",
+          },
+          correct: "b",
+          explanation:
+            "<ul><li>'Versatile' (বহুমুখী, বহুমুখী প্রতিভা সম্পন্ন) অর্থ হলো বিভিন্ন কাজ বা বিষয়ে দক্ষ।</li><li>(A) 'Inept' (অদক্ষ) অর্থ হলো অযোগ্য বা আনাড়ি।</li><li>(B) 'Multitalented' (বহুমুখী প্রতিভাধর) অর্থ হলো যার অনেক প্রতিভা আছে। এটি 'Versatile' এর সঠিক অর্থ।</li><li>(C) 'Mobile' (চলমান, সচল) অর্থ হলো যা চলতে পারে বা পরিবর্তনশীল।</li><li>(D) 'Varsity teacher' (বিশ্ববিদ্যালয়ের শিক্ষক) একটি পেশা।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "'Venerate' Means-",
+          options: {
+            a: "Defame",
+            b: "Abuse",
+            c: "Respect",
+            d: "Accuse",
+          },
+          correct: "c",
+          explanation:
+            "<ul><li>'Venerate' (সম্মান করা, পূজা করা) অর্থ হলো গভীরভাবে সম্মান করা বা শ্রদ্ধা জানানো।</li><li>(A) 'Defame' (বদনাম করা) অর্থ হলো অপবাদ দেওয়া।</li><li>(B) 'Abuse' (অপব্যবহার করা, গালি দেওয়া) অর্থ হলো খারাপ ব্যবহার করা।</li><li>(C) 'Respect' (সম্মান করা) অর্থ হলো শ্রদ্ধা করা। এটি 'Venerate' এর সমার্থক।</li><li>(D) 'Accuse' (অভিযোগ করা) অর্থ হলো দোষারোপ করা।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "Viable means-",
+          options: {
+            a: "Possible",
+            b: "That can be done",
+            c: "Capable",
+            d: "That will work",
+          },
+          correct: "c",
+          explanation:
+            "<ul><li>'Viable' (কার্যকর, টেকসই) অর্থ হলো যা কার্যকর বা সফল হওয়ার সম্ভাবনা আছে, বা কোনো নির্দিষ্ট কাজ করতে সক্ষম।</li><li>(A) 'Possible' (সম্ভব) অর্থ হলো যা করা সম্ভব। এটি কাছাকাছি অর্থ।</li><li>(B) 'That can be done' (যা করা যায়) অর্থ হলো সম্ভব। এটিও কাছাকাছি অর্থ।</li><li>(C) 'Capable' (সক্ষম, সমর্থ) অর্থ হলো কোনো কিছু করতে সক্ষম। এটি 'Viable' এর অর্থের সাথে খুব সামঞ্জস্যপূর্ণ, বিশেষ করে যখন কোনো ধারণা বা প্রকল্পের কার্যকারিতা বোঝানো হয়।</li><li>(D) 'That will work' (যা কাজ করবে) অর্থ হলো কার্যকর হবে। এটিও কাছাকাছি অর্থ।</li></ul><p><b>পুনর্বিবেচনা:</b> 'Viable' শব্দের সবচেয়ে প্রচলিত অর্থ হলো 'feasible' (সম্ভাব্য, কার্যকর) বা 'capable of working successfully'. এক্ষেত্রে (B) এবং (D) অপশনগুলোও খুব কাছাকাছি। তবে, (C) 'Capable' হলো আরও মৌলিক অর্থ যা দ্বারা কোনো কিছু সফলভাবে কাজ করার ক্ষমতা বোঝানো হয়। যদি 'Viable' কে 'capable of existing or developing successfully' হিসেবে ধরা হয়, তাহলে 'Capable' উপযুক্ত। তবে, প্রায়শই 'viable' কে 'practical' বা 'feasible' অর্থে ব্যবহার করা হয়। যদি 'viable' এর সংজ্ঞা 'able to work as intended' বা 'able to succeed' হয়, তাহলে 'That will work' (D) অথবা 'That can be done' (B) আরও সরাসরি সমার্থক হতে পারে। কিন্তু 'capable' অর্থ হলো 'having the ability or qualities necessary for something'. এই অর্থে 'viable' মানে 'capable of surviving or developing'. তাই 'Capable' একটি ভালো সমার্থক। প্রশ্নের বিকল্পগুলি খুব কাছাকাছি থাকায় ambiguity আছে। তবে, যেহেতু 'কার্যকরী' অর্থে 'Viable' ব্যবহার করা হয়, এবং 'Capable' দ্বারা কার্যক্ষমতা বোঝানো হয়, তাই এটি একটি ভালো পছন্দ।</p>",
+        },
+        {
+          id: 10,
+          question: "What is a proper antonym for 'Waver'?:",
+          options: {
+            a: "Sway",
+            b: "Very",
+            c: "Determine",
+            d: "Develop",
+          },
+          correct: "c",
+          explanation:
+            "<ul><li>'Waver' (দোদুল্যমান হওয়া, দ্বিধা করা) অর্থ হলো দ্বিধা করা, নড়বড়ে হওয়া বা মনস্থির করতে না পারা।</li><li>(A) 'Sway' (দুলানো, দোলা) অর্থ হলো দোলা বা প্রভাবিত হওয়া। এটি 'Waver' এর কাছাকাছি অর্থ।</li><li>(B) 'Very' (খুব) একটি Adverb।</li><li>(C) 'Determine' (দৃঢ়সংকল্প হওয়া, সিদ্ধান্ত নেওয়া) অর্থ হলো দৃঢ়সংকল্প হওয়া বা সিদ্ধান্ত নেওয়া। এটি 'Waver' এর বিপরীত।</li><li>(D) 'Develop' (উন্নত করা, বিকশিত করা) অর্থ হলো বিকাশ লাভ করা।</li></ul>",
+        },
+        {
+          id: 11,
+          question:
+            "Find a synonym for the word 'Vigorous' from the options given below:",
+          options: {
+            a: "Important and necessary",
+            b: "Shaping and quivering",
+            c: "Strong and energetic",
+            d: "Harmful and dangerous",
+          },
+          correct: "c",
+          explanation:
+            "<ul><li>'Vigorous' (শক্তিশালী, জোরালো) অর্থ হলো শক্তিশালী, উদ্যমী বা জোরালো।</li><li>(A) 'Important and necessary' (গুরুত্বপূর্ণ এবং প্রয়োজনীয়) ভিন্ন অর্থ।</li><li>(B) 'Shaping and quivering' (আকৃতি দেওয়া এবং কাঁপানো) ভিন্ন অর্থ।</li><li>(C) 'Strong and energetic' (শক্তিশালী এবং উদ্যমী) এটি 'Vigorous' এর সঠিক সমার্থক।</li><li>(D) 'Harmful and dangerous' (ক্ষতিকর এবং বিপজ্জনক) ভিন্ন অর্থ।</li></ul>",
+        },
+        {
+          id: 12,
+          question:
+            "Nazrul songs contain revolutionary fervour. The meaning of the underlined word is:",
+          options: {
+            a: "fever",
+            b: "favour",
+            c: "zeal",
+            d: "shock",
+          },
+          correct: "c",
+          explanation:
+            "<ul><li>'Fervour' (উত্তেজনা, উদ্দীপনা) অর্থ হলো গভীর আবেগ, উদ্দীপনা বা উৎসাহ।</li><li>(A) 'Fever' (জ্বর) একটি শারীরিক অবস্থা।</li><li>(B) 'Favour' (অনুগ্রহ, পক্ষপাত) অর্থ হলো সমর্থন বা পক্ষপাতিত্ব।</li><li>(C) 'Zeal' (উৎসাহ, উদ্দীপনা) অর্থ হলো প্রবল উৎসাহ বা উদ্দীপনা। এটি 'fervour' এর সঠিক অর্থ।</li><li>(D) 'Shock' (আঘাত, ধাক্কা) অর্থ হলো আকস্মিক আঘাত বা বিস্ময়।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "The synonym of 'zealous' is -",
+          options: {
+            a: "ardent",
+            b: "envious",
+            c: "indifferent",
+            d: "apathetic",
+          },
+          correct: "a",
+          explanation:
+            "<ul><li>'Zealous' (উৎসাহী, আগ্রহী) অর্থ হলো প্রবল উৎসাহী বা আগ্রহী।</li><li>(A) 'Ardent' (উৎসাহী, উদ্দীপ্ত) অর্থ হলো অত্যন্ত উৎসাহী বা আবেগময়। এটি 'zealous' এর সমার্থক।</li><li>(B) 'Envious' (হিংসুক) অর্থ হলো ঈর্ষান্বিত।</li><li>(C) 'Indifferent' (উদাসীন) অর্থ হলো নিরপেক্ষ বা অনাগ্রহী।</li><li>(D) 'Apathetic' (উদাসীন) অর্থ হলো আবেগহীন বা আগ্রহহীন।</li></ul>",
+        },
+        {
+          id: 14,
+          question:
+            'Select the negative interrogative form of "The man read a book"?',
+          options: {
+            a: "Did the man not read a book?",
+            b: "Does the man not read a book?",
+            c: "Did not the man read a book?",
+            d: "Does not the man read a book?",
+          },
+          correct: "a",
+          explanation:
+            "<ul><li>মূল বাক্য 'The man read a book' একটি Past Indefinite Tense-এর Affirmative Sentence। এটিকে Negative Interrogative-এ রূপান্তর করতে 'Did' ব্যবহার করতে হবে। 'not' এর অবস্থান Subject এর পরে হবে।</li><li>(A) 'Did the man not read a book?' এটি সঠিক Negative Interrogative Form। এখানে 'Did' (auxiliary verb) ব্যবহার করা হয়েছে এবং 'not' Subject এর পরে বসেছে।</li><li>(B) 'Does the man not read a book?' বাক্যটি Present Indefinite Tense-এর জন্য ব্যবহৃত হয়।</li><li>(C) 'Did not the man read a book?' এটি Contraction (Didn't) ছাড়া ব্যবহার করলে সাধারণত 'Did the man not read a book?' এই ক্রমটিই বেশি প্রচলিত। তবে, 'Did not the man read a book?' ব্যাকরণগতভাবে ভুল নয়, কিন্তু (A) বিকল্পটি আধুনিক ইংরেজিতে বেশি ব্যবহৃত।</li><li>(D) 'Does not the man read a book?' বাক্যটি Present Indefinite Tense-এর জন্য ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "Choose the synonym of the word 'Vindictive'-",
+          options: {
+            a: "revengeful",
+            b: "fearful",
+            c: "divided",
+            d: "convincing",
+          },
+          correct: "a",
+          explanation:
+            "<ul><li>'Vindictive' (প্রতিশোধপরায়ণ) অর্থ হলো প্রতিশোধ নিতে আগ্রহী।</li><li>(A) 'Revengeful' (প্রতিশোধপরায়ণ) অর্থ হলো প্রতিশোধ নিতে ইচ্ছুক। এটি 'Vindictive' এর সমার্থক।</li><li>(B) 'Fearful' (ভীত, ভয়ংকর) অর্থ হলো ভয়ে আচ্ছন্ন বা ভয়ংকর।</li><li>(C) 'Divided' (বিভক্ত) অর্থ হলো ভাগ করা বা বিভক্ত।</li><li>(D) 'Convincing' (প্রত্যয়জনক) অর্থ হলো বিশ্বাসযোগ্য বা বোঝাতে সক্ষম।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
